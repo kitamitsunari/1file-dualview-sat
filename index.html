@@ -541,10 +541,10 @@
 
         ctx.font = '11px sans-serif';
         ctx.fillStyle = '#64748b';
-        ctx.fillText('0°', cx, cy - maxRadius - 32);
-        ctx.fillText('180°', cx, cy + maxRadius + 32);
-        ctx.fillText('90°', cx + maxRadius + 34, cy);
-        ctx.fillText('270°', cx - maxRadius - 36, cy);
+        ctx.fillText('00', cx, cy - maxRadius - 32);
+        ctx.fillText('18', cx, cy + maxRadius + 32);
+        ctx.fillText('90', cx + maxRadius + 34, cy);
+        ctx.fillText('27', cx - maxRadius - 36, cy);
 
         const angleRad = (azimuth - 90) * (Math.PI / 180);
         const clampedElevation = Math.max(-10, elevation);
