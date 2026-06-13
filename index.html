@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satellite Skyplot & Footprint Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js"></script>
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛰️</text></svg>">
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --border-color: #e5e7eb;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --accent-bg: #eff6ff;
+            --accent-border: #bfdbfe;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #1e293b;
+            margin: 0 0 8px 0;
+        }
+
+        .app-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        @media (min-width: 900px) {
+            .app-layout {
+                grid-template-columns: 450px 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            height: fit-content;
+        }
+
+        .full-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            margin-top: 24px;
+        }
+
+        /* タイトルバーの整列用 */
+        .card-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            margin: 0;
+            color: #475569;
+        }
+
+        /* 外部リンクボタンのスタイル */
+        .ext-link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background-color: #f1f5f9;
+            color: #475569;
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        .ext-link-btn:hover {
+            background-color: var(--accent-bg);
+            color: var(--primary-color);
+            border-color: var(--accent-border);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .paste-zone {
+            background-color: var(--accent-bg);
+            border: 1px dashed var(--accent-border);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .paste-zone p {
+            margin: 0 0 6px 0;
+            font-size: 0.85rem;
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        /* Googleマップ用インラインリンク */
+        .gmaps-link {
+            color: #1e40af;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .gmaps-link:hover {
+            color: var(--primary-hover);
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            color: #475569;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            font-family: monospace;
+            font-size: 0.85rem;
+            resize: vertical;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .slider-zone {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        .info-text {
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+
+        .plot-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            background: #ffffff;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .map-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+        .visible { background-color: #d1fae5; color: var(--success-color); }
+        .hidden { background-color: #fee2e2; color: var(--danger-color); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Satellite Skyplot & Footprint Tracker</h1>
+    </header>
+
+    <div class="app-layout">
+        <div class="card">
+            <div class="card-header-flex">
+                <h2>1. 入力データ & 時間制御</h2>
+                <a href="https://celestrak.org/NORAD/elements/index.php?FORMAT=tle" target="_blank" class="ext-link-btn" title="CelesTrakから最新のTLEを取得します">
+                    📡 最新TLEを取得
+                </a>
+            </div>
+            
+            <div class="form-group">
+                <label for="tleInput">TLE (2行軌道要素)</label>
+                <textarea id="tleInput" rows="3">1 25544U 98067A   26162.89315532  .00014761  00000-0  26478-3 0  9990
+2 25544  51.6416 189.2452 0001046  85.9228  46.4025 15.49472917571614</textarea>
+            </div>
+
+            <div class="paste-zone">
+                <p>📍 <a href="https://maps.google.com" target="_blank" class="gmaps-link" title="Googleマップを開きます">Googleマップから座標をペースト</a>(地図上で右クリック)</p>
+                <input type="text" id="gmapsPaste" placeholder="例: 35.153243, 137.043100">
+            </div>
+
+            <div class="grid-3">
+                <div class="form-group">
+                    <label for="latInput">緯度 (°)</label>
+                    <input type="text" id="latInput" value="35.6895">
+                </div>
+                <div class="form-group">
+                    <label for="lonInput">経度 (°)</label>
+                    <input type="text" id="lonInput" value="139.6917">
+                </div>
+                <div class="form-group">
+                    <label for="altInput">高度 (m)</label>
+                    <input type="text" id="altInput" value="40">
+                </div>
+            </div>
+
+            <button id="calcBtn">基準時刻を「現在」にリセット</button>
+
+            <div class="slider-zone">
+                <label for="timeSlider" style="display: flex; justify-content: space-between;">
+                    <span>🕒 タイムシミュレーション</span>
+                    <span id="sliderOffsetVal" style="color: var(--primary-color); font-weight: bold;">現在時刻</span>
+                </label>
+                <input type="range" id="timeSlider" min="-180" max="180" value="0" step="1">
+                <div class="slider-labels">
+                    <span>3時間前 (-180m)</span>
+                    <span>現在 (0)</span>
+                    <span>3時間後 (+180m)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card plot-container">
+            <div class="card-header-flex" style="width: 100%;">
+                <h2>2. 天球配置図 (Skyplot)</h2>
+            </div>
+            <div class="info-text">
+                <strong>計算日時 (JST):</strong> <span id="calcTime">-</span> | 
+                <strong>AZ:</strong> <span id="txtAz">-</span> | 
+                <strong>EL:</strong> <span id="txtEl">-</span>
+            </div>
+            <div id="statusBadge" class="status-badge" style="display: none;"></div>
+            
+            <canvas id="skyplotCanvas" width="500" height="500"></canvas>
+        </div>
+    </div>
+
+    <div class="full-card">
+        <div class="card-header-flex">
+            <h2>3. 衛星直下点と可視圏 (Footprint Map)</h2>
+        </div>
+        <div class="info-text">
+            <strong>衛星位置:</strong> 緯度 <span id="satLat">-</span>°, 経度 <span id="satLon">-</span>° | 
+            <strong>衛星高度:</strong> <span id="satAlt">-</span> km | 
+            <strong>可視圏半径（地表距離）:</strong> 約 <span id="footprintRadius">-</span> km
+        </div>
+        <div class="map-container">
+            <canvas id="mapCanvas" width="900" height="450"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    let baseTime = new Date();
+
+    // 内蔵用の簡易世界地図ポリゴンデータ
+    const worldContours = [
+        [[-17,14],[-14,12],[-16,5],[-12,-4],[-7,-5],[-5,-11],[3,-34],[19,-34],[35,-25],[51,11],[48,13],[44,15],[38,30],[43,41],[35,32],[27,40],[25,36],[12,43],[14,51],[23,65],[54,71],[103,77],[169,69],[179,66],[171,60],[140,54],[130,42],[121,39],[121,31],[108,22],[106,10],[99,7],[92,15],[79,12],[68,24],[62,25],[58,12],[47,15],[43,12],[36,14],[32,31],[22,16],[15,12],[-5,36],[-10,36],[-17,14]],
+        [[130,32],[132,34],[135,35],[140,36],[142,40],[145,43],[142,45],[141,41],[139,38],[136,37],[132,35],[130,32]],
+        [[-164,68],[-142,70],[-121,69],[-94,68],[-76,73],[-80,60],[-64,59],[-56,47],[-64,45],[-80,25],[-81,25],[-97,26],[-105,19],[-99,16],[-109,23],[-115,33],[-124,48],[-165,65],[-164,68]],
+        [[-80,9],[-72,11],[-53, -5],[-35, -6],[-41,-22],[-61,-37],[-66,-53],[-71,-54],[-75,-44],[-72,-37],[-72,-16],[-81,-5],[-80,9]],
+        [[114,-22],[123,-16],[137,-12],[142,-11],[148,-21],[151,-33],[138,-39],[115,-34],[114,-22]],
+        [[-5,50],[-5,56],[-2,57],[1,51],[-5,50]]
+    ];
+
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(runCalculationAndPlot, 100);
+    });
+
+    function runCalculationAndPlot() {
+        const rawTle = document.getElementById('tleInput').value.trim();
+        if (!rawTle) return;
+
+        const tleLines = rawTle.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+        if (tleLines.length < 2) return;
+        
+        const line2 = tleLines[tleLines.length - 1];
+        const line1 = tleLines[tleLines.length - 2];
+
+        let satName = "Satellite";
+        if (tleLines.length >= 3) {
+            satName = tleLines[tleLines.length - 3];
+        } else {
+            if(line1.includes("25544")) satName = "ISS";
+        }
+
+        const latDeg = parseFloat(document.getElementById('latInput').value);
+        const lonDeg = parseFloat(document.getElementById('lonInput').value);
+        const altMeters = parseFloat(document.getElementById('altInput').value);
+
+        if (isNaN(latDeg) || isNaN(lonDeg)) return;
+
+        const observerGd = {
+            longitude: lonDeg * (Math.PI / 180),
+            latitude: latDeg * (Math.PI / 180),
+            height: isNaN(altMeters) ? 0 : altMeters / 1000
+        };
+
+        const offsetMinutes = parseInt(document.getElementById('timeSlider').value);
+        const calcTime = new Date(baseTime.getTime() + offsetMinutes * 60 * 1000);
+
+        const offsetLabel = document.getElementById('sliderOffsetVal');
+        if (offsetMinutes === 0) {
+            offsetLabel.textContent = "現在時刻";
+        } else if (offsetMinutes > 0) {
+            offsetLabel.textContent = `＋${offsetMinutes} 分後`;
+        } else {
+            offsetLabel.textContent = `－${Math.abs(offsetMinutes)} 分前`;
+        }
+
+        try {
+            if (typeof satellite === 'undefined') return;
+
+            const satrec = satellite.twoline2satrec(line1, line2);
+            const positionAndVelocity = satellite.propagate(satrec, calcTime);
+            const positionEci = positionAndVelocity.position;
+
+            if (positionEci) {
+                const gmst = satellite.gstime(calcTime);
+                
+                const positionEcf = satellite.eciToEcf(positionEci, gmst);
+                const lookAngles = satellite.ecfToLookAngles(observerGd, positionEcf);
+                const azimuthDeg   = lookAngles.azimuth * (180 / Math.PI);
+                const elevationDeg = lookAngles.elevation * (180 / Math.PI);
+
+                const positionGd = satellite.eciToGeodetic(positionEci, gmst);
+                const satLatDeg = positionGd.latitude * (180 / Math.PI);
+                const satLonDeg = positionGd.longitude * (180 / Math.PI);
+                const satAltKm  = positionGd.height;
+
+                document.getElementById('calcTime').textContent = calcTime.toLocaleString();
+                document.getElementById('txtAz').textContent = `${azimuthDeg.toFixed(2)}°`;
+                document.getElementById('txtEl').textContent = `${elevationDeg.toFixed(2)}°`;
+                
+                document.getElementById('satLat').textContent = satLatDeg.toFixed(4);
+                document.getElementById('satLon').textContent = satLonDeg.toFixed(4);
+                document.getElementById('satAlt').textContent = satAltKm.toFixed(0);
+
+                const badge = document.getElementById('statusBadge');
+                badge.style.display = 'inline-block';
+                if (elevationDeg > 0) {
+                    badge.textContent = '👉 この時刻、この場所から見えています！';
+                    badge.className = 'status-badge visible';
+                } else {
+                    badge.textContent = '❌ この時刻、地平線の下に隠れています。';
+                    badge.className = 'status-badge hidden';
+                }
+
+                drawSkyplot(azimuthDeg, elevationDeg, satName);
+                drawFootprintMap(satLatDeg, satLonDeg, satAltKm, latDeg, lonDeg, satName);
+
+            } else {
+                clearCanvas();
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    function clearCanvas() {
+        ['skyplotCanvas', 'mapCanvas'].forEach(id => {
+            const canvas = document.getElementById(id);
+            if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        });
+    }
+
+    function drawSkyplot(azimuth, elevation, satName) {
+        const canvas = document.getElementById('skyplotCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const maxRadius = Math.min(cx, cy) - 40;
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, maxRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = '#f8fafc';
+        ctx.fill();
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        const elCircles = [30, 60];
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        elCircles.forEach(el => {
+            const r = maxRadius * ((90 - el) / 90);
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.fillStyle = '#64748b';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${el}°`, cx, cy - r - 4);
+        });
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - maxRadius); ctx.lineTo(cx, cy + maxRadius);
+        ctx.moveTo(cx - maxRadius, cy); ctx.lineTo(cx + maxRadius, cy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('N', cx, cy - maxRadius - 15);
+        ctx.fillText('S', cx, cy + maxRadius + 15);
+        ctx.fillText('E', cx + maxRadius + 15, cy);
+        ctx.fillText('W', cx - maxRadius - 15, cy);
+
+        ctx.font = '11px sans-serif';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText('0°', cx, cy - maxRadius - 32);
+        ctx.fillText('180°', cx, cy + maxRadius + 32);
+        ctx.fillText('90°', cx + maxRadius + 34, cy);
+        ctx.fillText('270°', cx - maxRadius - 36, cy);
+
+        const angleRad = (azimuth - 90) * (Math.PI / 180);
+        const clampedElevation = Math.max(-10, elevation);
+        const r = maxRadius * ((90 - clampedElevation) / 90);
+
+        const satX = cx + r * Math.cos(angleRad);
+        const satY = cy + r * Math.sin(angleRad);
+
+        ctx.beginPath();
+        ctx.arc(satX, satY, 8, 0, 2 * Math.PI);
+        ctx.fillStyle = '#f97316';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#f97316';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(` ${satName}`, satX + 10, satY);
+    }
+
+    function drawFootprintMap(satLat, satLon, satAlt, obsLat, obsLon, satName) {
+        const canvas = document.getElementById('mapCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#e0f2fe';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const getXY = (lat, lon) => {
+            const x = ((lon + 180) / 360) * canvas.width;
+            const y = ((90 - lat) / 180) * canvas.height;
+            return { x, y };
+        };
+
+        ctx.fillStyle = '#cbd5e1';
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1;
+        
+        worldContours.forEach(polygon => {
+            ctx.beginPath();
+            polygon.forEach((pt, idx) => {
+                const xy = getXY(pt[1], pt[0]);
+                if (idx === 0) ctx.moveTo(xy.x, xy.y);
+                else ctx.lineTo(xy.x, xy.y);
+            });
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        });
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 0.5;
+        for (let l = -150; l <= 150; l += 30) {
+            ctx.beginPath(); ctx.moveTo(getXY(90, l).x, 0); ctx.lineTo(getXY(-90, l).x, canvas.height); ctx.stroke();
+        }
+        for (let l = -60; l <= 60; l += 30) {
+            ctx.beginPath(); ctx.moveTo(0, getXY(l, 0).y); ctx.lineTo(canvas.width, getXY(l, 0).y); ctx.stroke();
+        }
+
+        const obsXY = getXY(obsLat, obsLon);
+        ctx.beginPath();
+        ctx.arc(obsXY.x, obsXY.y, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = '#2563eb';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        ctx.fillStyle = '#2563eb';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('観測点', obsXY.x, obsXY.y - 10);
+
+        const R_earth = 6371.0;
+        const cosTheta = R_earth / (R_earth + satAlt);
+        const clampedCos = Math.min(1.0, Math.max(-1.0, cosTheta));
+        const centralAngleRad = Math.acos(clampedCos);
+        const radiusEarthKm = R_earth * centralAngleRad;
+        document.getElementById('footprintRadius').textContent = radiusEarthKm.toFixed(0);
+
+        const degRadiusLon = (radiusEarthKm / (2 * Math.PI * R_earth * Math.cos(Math.max(-80, Math.min(80, satLat)) * Math.PI / 180))) * 360;
+        const degRadiusLat = (radiusEarthKm / (2 * Math.PI * R_earth)) * 360;
+        
+        const pixelRadiusX = (degRadiusLon / 360) * canvas.width;
+        const pixelRadiusY = (degRadiusLat / 180) * canvas.height;
+
+        const satXY = getXY(satLat, satLon);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(satXY.x, satXY.y, Math.min(canvas.width/3, pixelRadiusX), Math.min(canvas.height/3, pixelRadiusY), 0, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(249, 115, 22, 0.18)'; 
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(249, 115, 22, 0.7)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(satXY.x, satXY.y, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = '#f97316';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = '#f97316';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(` ${satName}`, satXY.x + 8, satXY.y + 4);
+    }
+
+    document.getElementById('calcBtn').addEventListener('click', () => {
+        baseTime = new Date();
+        document.getElementById('timeSlider').value = 0;
+        runCalculationAndPlot();
+    });
+
+    document.getElementById('timeSlider').addEventListener('input', runCalculationAndPlot);
+
+    document.getElementById('gmapsPaste').addEventListener('input', (e) => {
+        const rawValue = e.target.value.trim();
+        if (!rawValue) return;
+        const parts = rawValue.split(',');
+        if (parts.length >= 2) {
+            document.getElementById('latInput').value = parts[0].trim();
+            document.getElementById('lonInput').value = parts[1].trim();
+            document.getElementById('timeSlider').value = 0;
+            runCalculationAndPlot();
+        }
+    });
+</script>
+
+</body>
+</html>
