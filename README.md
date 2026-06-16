@@ -7,7 +7,8 @@ A lightweight, standalone HTML5 Canvas app that visualizes satellite orbits in b
 ・TLEと現在位置はマウスでコピペできます。コピー元のリンクも埋め込んであります。
 ・前後３時間をスライダで動かし可視化できます。
 
-※ツールがあるからといってブラックボックスのままではいけません。座標変換について理解の助けになるスライドもあわせてご覧ください。
+※ツールがあるからといってブラックボックスのままではいけないので、座標変換について理解の助けになるスライドも作成しました。あわせてご覧ください。
+  https://docs.google.com/presentation/d/19J2593Irl7cV4p_tFtt52ITla43GhpCI8KoH5ZYzJ_Y/edit?usp=sharing
 
 ## README
 
