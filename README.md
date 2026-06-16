@@ -1,6 +1,14 @@
 # 1file-dualview-sat
 A lightweight, standalone HTML5 Canvas app that visualizes satellite orbits in both Skyplot and Footprint views via a single HTML file.
 
+## ほしかったのでつくってみました
+・地上視点(skyplot)と衛星可視域(footprint)をブラウザで同時表示するツールです。
+・htmlファイルひとつをダウンロードするだけです。
+・TLEと現在位置はマウスでコピペできます。コピー元のリンクも埋め込んであります。
+・前後３時間をスライダで動かし可視化できます。
+
+※ツールがあるからといってブラックボックスのままではいけません。座標変換について理解の助けになるスライドもあわせてご覧ください。
+
 ## README
 
 本プロジェクトは Gemini Flash 3.5との対話を通じ、段階を踏んで設計・実装を進めたサテライトトラッカーのプロトタイプです。
