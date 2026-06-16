@@ -2,10 +2,10 @@
 A lightweight, standalone HTML5 Canvas app that visualizes satellite orbits in both Skyplot and Footprint views via a single HTML file.
 
 ## ほしかったのでつくってみました
- - 地上視点(skyplot)と衛星可視域(footprint)をブラウザで同時表示するツールです。
- - htmlファイルひとつをダウンロードするだけです。
- - TLEと現在位置はマウスでコピペできます。コピー元のリンクも埋め込んであります。
- - 前後３時間をスライダで動かし可視化できます。
+ - 地上視点(skyplot)からの衛星と、衛星からの可視域(footprint)をブラウザで同時表示するツールです。
+ - 前後3時間分をスライダで動かして可視化できます。
+ - 単一のhtmlファイルのみで動作します。
+ - TLEと現在位置はマウスでコピペできます。コピー元のリンクもページ内に埋め込んであります。
 
 ## 座標変換の解説
 ツールがあるからといってブラックボックスのままではいけないので、座標変換について理解の助けになるスライドも作成しました。あわせてご覧ください。
