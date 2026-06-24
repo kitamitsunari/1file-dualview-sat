@@ -268,7 +268,7 @@
     <div class="app-layout">
         <div class="card">
             <div class="card-header-flex">
-                <h2>1. 入力データ & 時間制御</h2>
+                <h2>1. 軌道・位置情報 & 時刻スライダ</h2>
                 <a href="https://celestrak.org/NORAD/elements/index.php?FORMAT=tle" target="_blank" class="ext-link-btn" title="CelesTrakから最新のTLEを取得します">
                     📡 最新TLEを取得
                 </a>
@@ -300,11 +300,11 @@
                 </div>
             </div>
 
-            <button id="calcBtn">基準時刻を「現在」にリセット</button>
+            <button id="calcBtn">「現在位置」を演算し表示</button>
 
             <div class="slider-zone">
                 <label for="timeSlider" style="display: flex; justify-content: space-between;">
-                    <span>🕒 タイムシミュレーション</span>
+                    <span>🕒 時刻スライダ</span>
                     <span id="sliderOffsetVal" style="color: var(--primary-color); font-weight: bold;">現在時刻</span>
                 </label>
                 <input type="range" id="timeSlider" min="-180" max="180" value="0" step="1">
@@ -318,7 +318,7 @@
 
         <div class="card plot-container">
             <div class="card-header-flex" style="width: 100%;">
-                <h2>2. 天球配置図 & 擬似距離・高度ゲージ</h2>
+                <h2>2. 天球配置図 & 見通し距離と高度ゲージ</h2>
             </div>
             <div class="info-text" id="infoPanel">
                 <strong>日時 (JST):</strong> <span id="calcTime" style="color:inherit;">-</span> | 
@@ -337,7 +337,7 @@
 
     <div class="full-card">
         <div class="card-header-flex">
-            <h2>3. 衛星直下点と可視圏 (Footprint Map & 速度ベクトル)</h2>
+            <h2>3. 衛星直下点と可視圏 (フットプリント & 速度ベクトル)</h2>
             <div style="font-size: 0.9rem; color: #475569; font-weight: bold;">
                 🧭 軌道速度: <span id="txtOrbitalVel">-</span> km/s | 
                 🌍 対地速度: <span id="txtGroundVel">-</span> km/h
@@ -784,21 +784,21 @@
         ctx.fillStyle = '#475569';
         ctx.font = 'bold 10px sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText('可視期間レンジ', xStats, padTop);
+        ctx.fillText('可視期間レンジ', xStats, padTop + 120);
         
         ctx.font = '9px sans-serif';
         ctx.fillStyle = 'var(--primary-color)';
         const dMinText = dMinVal !== null ? `${dMinVal.toFixed(0)} km` : '---';
-        ctx.fillText(`Dmin (天頂辺り):`, xStats, padTop + 20);
+        ctx.fillText(`Dmin (天頂辺り):`, xStats, padTop + 200);
         ctx.font = 'bold 10px sans-serif';
-        ctx.fillText(`  ${dMinText}`, xStats, padTop + 32);
+        ctx.fillText(`  ${dMinText}`, xStats, padTop + 212);
 
         ctx.font = '9px sans-serif';
         ctx.fillStyle = 'var(--danger-color)';
         const dMaxText = dMaxVal !== null ? `${dMaxVal.toFixed(0)} km` : '---';
-        ctx.fillText(`Dmax (出没時):`, xStats, padTop + 54);
+        ctx.fillText(`Dmax (出没時):`, xStats, padTop + 160);
         ctx.font = 'bold 10px sans-serif';
-        ctx.fillText(`  ${dMaxText}`, xStats, padTop + 66);
+        ctx.fillText(`  ${dMaxText}`, xStats, padTop + 172);
     }
 
     function drawFootprintMap(satLat, satLon, satAlt, obsLat, obsLon, groundTrackRad, groundVel, satName) {
