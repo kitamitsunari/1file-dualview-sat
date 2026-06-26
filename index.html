@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>1file-dualview-sat v2.0.0</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js"></script>
+    <title>1file-dualview-sat v2.0.2</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' stroke='%232563eb' stroke-width='6' fill='none'/><path d='M50 10 L50 90 M10 50 L90 50' stroke='%2394a3b8' stroke-width='4' stroke-dasharray='5,5'/><circle cx='75' cy='30' r='10' fill='%23f97316'/></svg>">
     
     <style>
@@ -252,7 +252,6 @@
         .visible { background-color: #d1fae5; color: var(--success-color); }
         .hidden { background-color: #fee2e2; color: var(--danger-color); }
         
-        /* グレーアウト用の汎用スタイル */
         .text-muted {
             color: #94a3b8 !important;
         }
@@ -262,13 +261,13 @@
 
 <div class="container">
     <header>
-<h1>Satellite Skyplot & Footprint Tracker <small style="font-size:0.5em; color:#64748b; vertical-align:middle;">v2.0.0</small></h1>
+<h1>Satellite Skyplot & Footprint Tracker <small style="font-size:0.5em; color:#64748b; vertical-align:middle;">v2.0.2</small></h1>
     </header>
 
     <div class="app-layout">
         <div class="card">
             <div class="card-header-flex">
-                <h2>1. 軌道・位置情報 & 時刻スライダ</h2>
+                <h2>1. 入力データ & 時間制御</h2>
                 <a href="https://celestrak.org/NORAD/elements/index.php?FORMAT=tle" target="_blank" class="ext-link-btn" title="CelesTrakから最新のTLEを取得します">
                     📡 最新TLEを取得
                 </a>
@@ -323,24 +322,24 @@
             <div class="info-text" id="infoPanel">
                 <strong>日時 (JST):</strong> <span id="calcTime" style="color:inherit;">-</span> | 
                 <span id="wrapEl"><strong>EL:</strong> <span id="txtEl">-</span></span><br>
-                <span id="wrapRange"><strong>観測者からの距離 (擬似距離):</strong> <span id="txtRange">-</span> km</span> | 
-                <span id="wrapRangeRate"><strong>ドップラー速度:</strong> <span id="txtRangeRate">-</span></span>
+                <span id="wrapRange"><strong>見通し距離:</strong> <span id="txtRange">-</span> km</span> | 
+                <span id="wrapRangeRate"><strong>相対速度:</strong> <span id="txtRangeRate">-</span></span>
             </div>
             <div id="statusBadge" class="status-badge" style="display: none;"></div>
             
             <div class="canvas-flex">
                 <canvas id="skyplotCanvas" width="440" height="440"></canvas>
-                <canvas id="altitudeCanvas" width="180" height="440" style="background:#f8fafc; border-left:1px solid var(--border-color);"></canvas>
+                <canvas id="altitudeCanvas" width="220" height="440" style="background:#f8fafc; border-left:1px solid var(--border-color);"></canvas>
             </div>
         </div>
     </div>
 
     <div class="full-card">
         <div class="card-header-flex">
-            <h2>3. 衛星直下点と可視圏 (フットプリント & 速度ベクトル)</h2>
+            <h2>3. 衛星直下点と可視圏 (Footprint Map & 速度ベクトル)</h2>
             <div style="font-size: 0.9rem; color: #475569; font-weight: bold;">
                 🧭 軌道速度: <span id="txtOrbitalVel">-</span> km/s | 
-                🌍 対地速度: <span id="txtGroundVel">-</span> km/h
+                🌍 对地速度: <span id="txtGroundVel">-</span> km/h
             </div>
         </div>
         <div class="info-text">
@@ -356,11 +355,9 @@
 
 <script>
     let baseTime = new Date();
-    
-    // 🆕 【要件4】スライダ操作範囲（シミュレーション内）での可視期間中の最大・最小擬似距離を保持するグローバル変数
     let dMinVal = null;
     let dMaxVal = null;
-    let lastLoadedTle = ""; // TLE変更検知用
+    let lastLoadedTle = ""; 
 
     const worldContours = [
         [[-9,39],[-9,43],[-5,43],[1,51],[-5,50],[-5,56],[-5,58],[-10,56],[5,58],[12,58],[15,56],[22,60],[19,65],[23,65],[32,71],[69,68],[74,72],[103,77],[169,69],[179,66],[171,60],[140,54],[135,48],[129,40],[124,40],[118,32],[121,25],[110,20],[108,14],[101,10],[103,1],[98,7],[96,16],[80,13],[72,8],[68,24],[62,25],[58,12],[47,15],[43,12],[48,27],[35,14],[32,30],[27,31],[34,35],[26,40],[22,40],[14,48],[12,43],[9,43],[9,40],[6,44],[0,46],[-5,43],[-9,39]],
@@ -387,19 +384,16 @@
     ];
 
     window.addEventListener('DOMContentLoaded', () => {
-        // 初期計算の前にDmax/Dminのサーチトリガーを仕込む
         const tleInput = document.getElementById('tleInput');
         tleInput.addEventListener('input', () => { dMinVal = null; dMaxVal = null; });
         setTimeout(runCalculationAndPlot, 100);
     });
 
-    // 🆕 現在のスライダ表示時間帯（前後3時間）の中で、可視状態になる全瞬間のDmax/Dminを先回りスキャンして固定保持する関数
     function preScanDMinDMax(satrec, observerGd) {
         let scanMin = Infinity;
         let scanMax = -Infinity;
         let foundVisible = false;
 
-        // スライダと同じ-180分〜+180分を1分刻みで全走査
         for (let m = -180; m <= 180; m++) {
             const checkTime = new Date(baseTime.getTime() + m * 60 * 1000);
             const pAndV = satellite.propagate(satrec, checkTime);
@@ -409,7 +403,6 @@
                 const lAngles = satellite.ecfToLookAngles(observerGd, pEcf);
                 const elDeg = lAngles.elevation * (180 / Math.PI);
 
-                // 可視（地平線上）のときのみ、擬似距離をサンプリング
                 if (elDeg >= 0) {
                     foundVisible = true;
                     const oEcf = satellite.geodeticToEcf(observerGd, gmst);
@@ -438,7 +431,7 @@
         if (!rawTle) return;
 
         if (rawTle !== lastLoadedTle) {
-            dMinVal = null; // TLEが変わったら統計値をリセット
+            dMinVal = null; 
             dMaxVal = null;
             lastLoadedTle = rawTle;
         }
@@ -471,7 +464,6 @@
         const offsetMinutes = parseInt(document.getElementById('timeSlider').value);
         const calcTime = new Date(baseTime.getTime() + offsetMinutes * 60 * 1000);
 
-        // スライダのオフセット表示ラベル更新
         const offsetLabel = document.getElementById('sliderOffsetVal');
         if (offsetMinutes === 0) {
             offsetLabel.textContent = "現在時刻";
@@ -486,7 +478,6 @@
 
             const satrec = satellite.twoline2satrec(line1, line2);
             
-            // 初回またはリセット時にDmax/Dminを全域スキャン
             if (dMinVal === null || dMaxVal === null) {
                 preScanDMinDMax(satrec, observerGd);
             }
@@ -524,7 +515,6 @@
                 const earthRadius = 6371.0;
                 const groundVelKmh = (orbitalVel * (earthRadius / (earthRadius + satAltKm))) * 3600;
 
-                // 地図上の2D進行方向ベクトル
                 const cosLat = Math.cos(positionGd.latitude);
                 const vLat = -velocityEcf.x * Math.sin(positionGd.latitude) * Math.cos(positionGd.longitude) 
                              - velocityEcf.y * Math.sin(positionGd.latitude) * Math.sin(positionGd.longitude) 
@@ -535,32 +525,31 @@
 
                 const isVisible = elevationDeg >= 0;
 
-                // 🆕 【要件1】不可視期間は各対象項目をグレーアウト(text-mutedクラス適用)
+                // UI表示更新
                 document.getElementById('calcTime').textContent = calcTime.toLocaleString();
                 document.getElementById('txtEl').textContent = `${elevationDeg.toFixed(2)}°`;
                 document.getElementById('txtRange').textContent = rangeKm.toFixed(1);
                 
                 const rrTxt = document.getElementById('txtRangeRate');
+                let rangeRateString = "";
                 if (rangeRate < 0) {
-                    rrTxt.textContent = `接近中 (${Math.abs(rangeRate).toFixed(2)} km/s)`;
+                    rangeRateString = `接近中 (${Math.abs(rangeRate).toFixed(2)} km/s)`;
                     if (isVisible) rrTxt.style.color = 'var(--primary-color)';
                 } else {
-                    rrTxt.textContent = `遠ざかり中 (${rangeRate.toFixed(2)} km/s)`;
+                    rangeRateString = `遠ざかり中 (${rangeRate.toFixed(2)} km/s)`;
                     if (isVisible) rrTxt.style.color = 'var(--danger-color)';
                 }
+                rrTxt.textContent = rangeRateString;
 
-                // 要件1：DOMクラスの動的コントロールによるインテリジェント・グレーアウト
                 if (isVisible) {
                     document.getElementById('wrapEl').className = "";
                     document.getElementById('wrapRange').className = "";
                     document.getElementById('wrapRangeRate').className = "";
-                    if (rangeRate < 0) rrTxt.style.color = 'var(--primary-color)';
-                    else rrTxt.style.color = 'var(--danger-color)';
                 } else {
                     document.getElementById('wrapEl').className = "text-muted";
                     document.getElementById('wrapRange').className = "text-muted";
                     document.getElementById('wrapRangeRate').className = "text-muted";
-                    rrTxt.style.color = "inherit"; // 親のグレーを継承
+                    rrTxt.style.color = "inherit"; 
                 }
 
                 document.getElementById('txtOrbitalVel').textContent = orbitalVel.toFixed(2);
@@ -579,9 +568,8 @@
                     badge.className = 'status-badge hidden';
                 }
 
-                // レンダリングに可視フラグ(isVisible)を伝播
                 drawSkyplot(azimuthDeg, elevationDeg, satName);
-                drawAltitudeGauge(satAltKm, rangeKm, rangeRate, isVisible);
+                drawAltitudeGauge(satAltKm, rangeKm, rangeRate, rangeRateString, isVisible);
                 drawFootprintMap(satLatDeg, satLonDeg, satAltKm, latDeg, lonDeg, groundTrackRad, groundVelKmh, satName);
 
             } else {
@@ -650,7 +638,6 @@
         const angleRad = (azimuth - 90) * (Math.PI / 180);
 
         if (elevation >= 0) {
-            // 可視状態：通常プロット
             const r = maxRadius * ((90 - elevation) / 90);
             const satX = cx + r * Math.cos(angleRad);
             const satY = cy + r * Math.sin(angleRad);
@@ -668,19 +655,17 @@
             ctx.textAlign = 'left';
             ctx.fillText(` ${satName}`, satX + 10, satY);
         } else {
-            // 🆕 【要件2】「不可視中の衛星マーカーをskyplotの外周(仰角0°の境界線上)に配置」を復活
             const satX = cx + maxRadius * Math.cos(angleRad);
             const satY = cy + maxRadius * Math.sin(angleRad);
 
             ctx.beginPath();
             ctx.arc(satX, satY, 7, 0, 2 * Math.PI);
-            ctx.fillStyle = '#e2e8f0'; // 薄いグレー
+            ctx.fillStyle = '#e2e8f0'; 
             ctx.fill();
             ctx.strokeStyle = '#94a3b8';
             ctx.lineWidth = 1.5;
             ctx.stroke();
 
-            // 視線方向(LOS)を示す外周ガイドテキスト
             ctx.fillStyle = '#94a3b8';
             ctx.font = 'italic 11px sans-serif';
             ctx.textAlign = 'left';
@@ -688,8 +673,8 @@
         }
     }
 
-    // 🆕 高度・擬似距離ゲージのグレーアウト化 ＆ 右側へのDmax/Dmin統計表示の完全実装
-    function drawAltitudeGauge(altKm, rangeKm, rangeRate, isVisible) {
+    // 🆕 高度・擬似距離ゲージ描画ロジック（要件4の座標修正および要件5のインライン追加）
+    function drawAltitudeGauge(altKm, rangeKm, rangeRate, rangeRateString, isVisible) {
         const canvas = document.getElementById('altitudeCanvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -714,7 +699,7 @@
         ctx.lineWidth = 6;
         ctx.beginPath(); ctx.moveTo(xCenter, padTop); ctx.lineTo(xCenter, yBottom); ctx.stroke();
 
-        // 静的ランドマーク
+        // ランドマーク
         const landmarks = [
             { name: 'ISS (~400k)', val: 400 },
             { name: 'GPS (~20k)', val: 20200 },
@@ -725,17 +710,17 @@
         landmarks.forEach(lm => {
             const y = getValY(lm.val);
             ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
-            ctx.beginPath(); ctx.moveTo(xCenter, y); ctx.lineTo(xCenter + 55, y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(xCenter, y); ctx.lineTo(xCenter + 45, y); ctx.stroke();
             ctx.fillStyle = '#94a3b8';
             ctx.font = '8px sans-serif';
             ctx.textAlign = 'left';
-            ctx.fillText(lm.name, xCenter + 8, y + 10);
+            ctx.fillText(lm.name, xCenter + 6, y + 10);
         });
         ctx.setLineDash([]);
 
         const ySat = getValY(altKm);
 
-        // 🆕 【要件3】擬似距離の線分・テキストのカラー制御（不可視時はグレーアウト線化・文字非表示）
+        // 擬似距離の線分カラー制御
         let lineColor = '#e2e8f0';
         if (isVisible) {
             const maxExpectedRate = 7.0; 
@@ -746,13 +731,12 @@
             ctx.lineWidth = 3.5;
             ctx.beginPath(); ctx.moveTo(xCenter, yBottom); ctx.lineTo(xCenter, ySat); ctx.stroke();
 
-            // 可視時のみ、同軸上の距離テキストを表示
+            // 可視時のみ、同軸上の左側に距離テキストを表示
             ctx.fillStyle = lineColor;
             ctx.font = 'bold 10px sans-serif';
             ctx.textAlign = 'left';
-            ctx.fillText(` ◀ ${rangeKm.toFixed(0)} km`, xCenter + 8, (yBottom + ySat)/2 + 4);
+            ctx.fillText(` ◀ ${rangeKm.toFixed(0)} km`, xCenter + 6, (yBottom + ySat)/2 + 4);
         } else {
-            // 不可視のときは、同軸上の線分は薄いグレーの極細ダッシュ線にして、距離数値自体は非表示（隠蔽）にする
             ctx.strokeStyle = '#cbd5e1';
             ctx.lineWidth = 1;
             ctx.setLineDash([2, 4]);
@@ -779,26 +763,48 @@
         ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'right';
         ctx.fillText('衛星 ', xCenter - 6, ySat + 4);
 
-        // 🆕 【要件4】右側の空きスペースに可視期間中の最大・最小擬似距離（Dmax / Dmin）を常時ホールド表示
-        const xStats = 110; // 右側の描画X位置
+        // 🆕 【要件4】右側の空きスペースの座標修正配置
+        const xStats = 110; 
         ctx.fillStyle = '#475569';
         ctx.font = 'bold 10px sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText('可視期間レンジ', xStats, padTop + 120);
+        ctx.fillText('可視中のレンジ', xStats, padTop + 100);
         
-        ctx.font = '9px sans-serif';
-        ctx.fillStyle = 'var(--primary-color)';
-        const dMinText = dMinVal !== null ? `${dMinVal.toFixed(0)} km` : '---';
-        ctx.fillText(`Dmin (天頂辺り):`, xStats, padTop + 200);
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillText(`  ${dMinText}`, xStats, padTop + 212);
-
+        // Dmaxの描画
         ctx.font = '9px sans-serif';
         ctx.fillStyle = 'var(--danger-color)';
         const dMaxText = dMaxVal !== null ? `${dMaxVal.toFixed(0)} km` : '---';
-        ctx.fillText(`Dmax (出没時):`, xStats, padTop + 160);
+        ctx.fillText(`Dmax (出没時):`, xStats, padTop + 130);
         ctx.font = 'bold 10px sans-serif';
-        ctx.fillText(`  ${dMaxText}`, xStats, padTop + 172);
+        ctx.fillText(`  ${dMaxText}`, xStats, padTop + 142);
+
+        // 🆕 【要件5】Dmax / Dmin の中間に「現在の状況」を動的マッピングして表示
+        ctx.font = '9px sans-serif';
+        ctx.fillStyle = isVisible ? '#334155' : '#94a3b8';
+        ctx.fillText('見通し距離(range):', xStats, padTop + 175);
+        
+        ctx.font = 'bold 11px sans-serif';
+        // 不可視の時は数値を隠す（またはハイフンにする）仕様の適用
+        ctx.fillStyle = isVisible ? lineColor : '#94a3b8';
+        const currentDistText = isVisible ? `${rangeKm.toFixed(1)} km` : '---';
+        ctx.fillText(`  ${currentDistText}`, xStats, padTop + 188);
+
+        ctx.font = '9px sans-serif';
+        ctx.fillStyle = isVisible ? '#334155' : '#94a3b8';
+        ctx.fillText('相対速度(doppler):', xStats, padTop + 212);
+        
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillStyle = isVisible ? (rangeRate < 0 ? 'var(--primary-color)' : 'var(--danger-color)') : '#94a3b8';
+        const currentRateText = isVisible ? (rangeRate < 0 ? `-${Math.abs(rangeRate).toFixed(2)} km/s` : `+${rangeRate.toFixed(2)} km/s`) : '---';
+        ctx.fillText(`  ${currentRateText}`, xStats, padTop + 224);
+
+        // Dminの描画
+        ctx.font = '9px sans-serif';
+        ctx.fillStyle = 'var(--primary-color)';
+        const dMinText = dMinVal !== null ? `${dMinVal.toFixed(0)} km` : '---';
+        ctx.fillText(`Dmin (再接近時):`, xStats, padTop + 260);
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText(`  ${dMinText}`, xStats, padTop + 272);
     }
 
     function drawFootprintMap(satLat, satLon, satAlt, obsLat, obsLon, groundTrackRad, groundVel, satName) {
@@ -816,7 +822,6 @@
             return { x, y };
         };
 
-        // 陸地描画
         ctx.fillStyle = '#cbd5e1';
         ctx.strokeStyle = '#94a3b8';
         ctx.lineWidth = 1;
@@ -832,7 +837,6 @@
             ctx.stroke();
         });
 
-        // グリッド線
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
         ctx.lineWidth = 0.5;
         for (let l = -150; l <= 150; l += 30) {
@@ -842,13 +846,11 @@
             ctx.beginPath(); ctx.moveTo(0, getXY(l, 0).y); ctx.lineTo(canvas.width, getXY(l, 0).y); ctx.stroke();
         }
 
-        // 観測点
         const obsXY = getXY(obsLat, obsLon);
         ctx.beginPath(); ctx.arc(obsXY.x, obsXY.y, 6, 0, 2 * Math.PI);
         ctx.fillStyle = '#2563eb'; ctx.fill();
         ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
 
-        // 可視圏幾何計算
         const R_earth = 6371.0;
         const cosTheta = R_earth / (R_earth + satAlt);
         const centralAngleRad = Math.acos(Math.min(1.0, Math.max(-1.0, cosTheta)));
@@ -870,7 +872,6 @@
         ctx.setLineDash([3, 3]); ctx.stroke();
         ctx.restore();
 
-        // 真の対地移動ベクトル矢印
         const arrowLength = (groundVel / 28000) * 80; 
         if (arrowLength > 2) {
             const arrowX = satXY.x + arrowLength * Math.cos(groundTrackRad);
@@ -893,10 +894,9 @@
             ctx.fill();
         }
 
-        // 衛星直下点
         ctx.beginPath(); ctx.arc(satXY.x, satXY.y, 6, 0, 2 * Math.PI);
         ctx.fillStyle = '#f97316'; ctx.fill();
-        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; stroke();
 
         ctx.fillStyle = '#f97316';
         ctx.font = 'bold 12px sans-serif';
@@ -907,7 +907,7 @@
     document.getElementById('calcBtn').addEventListener('click', () => {
         baseTime = new Date();
         document.getElementById('timeSlider').value = 0;
-        dMinVal = null; dMaxVal = null; // リセット時も再走査をかける
+        dMinVal = null; dMaxVal = null; 
         runCalculationAndPlot();
     });
 
