@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1file-dualview-sat v2.0.2</title>
+    <title>1file-dualview-sat v2.0.3</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' stroke='%232563eb' stroke-width='6' fill='none'/><path d='M50 10 L50 90 M10 50 L90 50' stroke='%2394a3b8' stroke-width='4' stroke-dasharray='5,5'/><circle cx='75' cy='30' r='10' fill='%23f97316'/></svg>">
     
@@ -261,13 +261,13 @@
 
 <div class="container">
     <header>
-<h1>Satellite Skyplot & Footprint Tracker <small style="font-size:0.5em; color:#64748b; vertical-align:middle;">v2.0.2</small></h1>
+<h1>Satellite Skyplot & Footprint Tracker <small style="font-size:0.5em; color:#64748b; vertical-align:middle;">v2.0.3</small></h1>
     </header>
 
     <div class="app-layout">
         <div class="card">
             <div class="card-header-flex">
-                <h2>1. 入力データ & 時間制御</h2>
+                <h2>1. 軌道情報 & 時刻スライダ</h2>
                 <a href="https://celestrak.org/NORAD/elements/index.php?FORMAT=tle" target="_blank" class="ext-link-btn" title="CelesTrakから最新のTLEを取得します">
                     📡 最新TLEを取得
                 </a>
@@ -299,7 +299,7 @@
                 </div>
             </div>
 
-            <button id="calcBtn">「現在位置」を演算し表示</button>
+            <button id="calcBtn">「現在位置と時刻」で表示</button>
 
             <div class="slider-zone">
                 <label for="timeSlider" style="display: flex; justify-content: space-between;">
@@ -336,7 +336,7 @@
 
     <div class="full-card">
         <div class="card-header-flex">
-            <h2>3. 衛星直下点と可視圏 (Footprint Map & 速度ベクトル)</h2>
+            <h2>3. 衛星直下点と可視圏 (速度ベクトル & フットプリント)</h2>
             <div style="font-size: 0.9rem; color: #475569; font-weight: bold;">
                 🧭 軌道速度: <span id="txtOrbitalVel">-</span> km/s | 
                 🌍 对地速度: <span id="txtGroundVel">-</span> km/h
