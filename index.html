@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1file-dualview-sat v2.0.3</title>
+    <title>1file-dualview-sat v2.8.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' stroke='%232563eb' stroke-width='6' fill='none'/><path d='M50 10 L50 90 M10 50 L90 50' stroke='%2394a3b8' stroke-width='4' stroke-dasharray='5,5'/><circle cx='75' cy='30' r='10' fill='%23f97316'/></svg>">
     
@@ -158,7 +158,7 @@
 
         textarea {
             font-family: monospace;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             resize: vertical;
         }
 
@@ -232,6 +232,7 @@
             background: #ffffff;
             max-width: 100%;
             height: auto;
+            cursor: pointer; /* ポチポチ選べるUXの明示 */
         }
 
         .map-container {
@@ -261,26 +262,30 @@
 
 <div class="container">
     <header>
-<h1>Satellite Skyplot & Footprint Tracker <small style="font-size:0.5em; color:#64748b; vertical-align:middle;">v2.0.3</small></h1>
+        <h1>Satellite Skyplot & Footprint Tracker <small style="font-size:0.5em; color:#64748b; vertical-align:middle;">v2.8.1</small></h1>
     </header>
 
     <div class="app-layout">
         <div class="card">
             <div class="card-header-flex">
-                <h2>1. 軌道情報 & 時刻スライダ</h2>
+                <h2>1. 軌道情報 (複数TLE対応)</h2>
                 <a href="https://celestrak.org/NORAD/elements/index.php?FORMAT=tle" target="_blank" class="ext-link-btn" title="CelesTrakから最新のTLEを取得します">
                     📡 最新TLEを取得
                 </a>
             </div>
             
             <div class="form-group">
-                <label for="tleInput">TLE (2行軌道要素)</label>
-                <textarea id="tleInput" rows="3">1 25544U 98067A   26162.89315532  .00014761  00000-0  26478-3 0  9990
-2 25544  51.6416 189.2452 0001046  85.9228  46.4025 15.49472917571614</textarea>
+                <label for="tleInput">TLE (複数可)</label>
+                <textarea id="tleInput" rows="6" placeholder="TLEデータをここに貼り付けてください（連続ペーストに対応）">ISS (ZARYA)
+1 25544U 98067A   26162.89315532  .00014761  00000-0  26478-3 0  9990
+2 25544  51.6416 189.2452 0001046  85.9228  46.4025 15.49472917571614
+QZSS (MICHIBIKI-1R)
+1 46484U 20065A   26162.48293961 -.00000213  00000-0  00000+0 0  9997
+2 46484  44.1202 291.5034 0751023 270.4042  57.0292  1.00288937 20739</textarea>
             </div>
 
             <div class="paste-zone">
-                <p>📍 <a href="https://maps.google.com" target="_blank" class="gmaps-link" title="Googleマップを開きます">Googleマップ座標ペースト欄</a> (自動分解)</p>
+                <p>📍 <a href="https://maps.google.com" target="_blank" class="gmaps-link" title="Googleマップを開きます">Googleマップ座標値(LAT, LON)ペースト欄</a> </p>
                 <input type="text" id="gmapsPaste" placeholder="例: 35.153243, 137.043100">
             </div>
 
@@ -299,11 +304,11 @@
                 </div>
             </div>
 
-            <button id="calcBtn">「現在位置と時刻」で表示</button>
+            <button id="calcBtn">基準時刻を「現在」にリセット</button>
 
             <div class="slider-zone">
                 <label for="timeSlider" style="display: flex; justify-content: space-between;">
-                    <span>🕒 時刻スライダ</span>
+                    <span>🕒 時刻スライダ (シミュレーション)</span>
                     <span id="sliderOffsetVal" style="color: var(--primary-color); font-weight: bold;">現在時刻</span>
                 </label>
                 <input type="range" id="timeSlider" min="-180" max="180" value="0" step="1">
@@ -320,6 +325,7 @@
                 <h2>2. 天球配置図 & 見通し距離と高度ゲージ</h2>
             </div>
             <div class="info-text" id="infoPanel">
+                <strong>対象ロックオン:</strong> <span id="txtLockName" style="color:var(--primary-color); font-weight:bold;">-</span><br>
                 <strong>日時 (JST):</strong> <span id="calcTime" style="color:inherit;">-</span> | 
                 <span id="wrapEl"><strong>EL:</strong> <span id="txtEl">-</span></span><br>
                 <span id="wrapRange"><strong>見通し距離:</strong> <span id="txtRange">-</span> km</span> | 
@@ -336,10 +342,10 @@
 
     <div class="full-card">
         <div class="card-header-flex">
-            <h2>3. 衛星直下点と可視圏 (速度ベクトル & フットプリント)</h2>
+            <h2>3. 衛星直下点と可視圏 (速度ベクトルとフットプリント)</h2>
             <div style="font-size: 0.9rem; color: #475569; font-weight: bold;">
                 🧭 軌道速度: <span id="txtOrbitalVel">-</span> km/s | 
-                🌍 对地速度: <span id="txtGroundVel">-</span> km/h
+                🌍 対地速度: <span id="txtGroundVel">-</span> km/h
             </div>
         </div>
         <div class="info-text">
@@ -355,10 +361,22 @@
 
 <script>
     let baseTime = new Date();
-    let dMinVal = null;
-    let dMaxVal = null;
-    let lastLoadedTle = ""; 
+    
+    // 🎨 視認性と美しさを完全に保証する厳選された10色のマルチカラーパレット
+    const colorPalette = [
+        '#f97316', // オレンジ
+        '#ec4899', // マゼンタ・ピンク
+        '#06b6d4', // シアン・ターコイズ
+        '#10b981', // エメラルドグリーン
+        '#8b5cf6', // バイオレット・パープル
+        '#eab308', // イエロー・ゴールド
+        '#ef4444', // レッド
+        '#3b82f6', // ブルー
+        '#6366f1', // インディゴ
+        '#14b8a6'  // タイルグリーン
+    ];
 
+    // 全世界の陸地マルチポリゴンデータ
     const worldContours = [
         [[-9,39],[-9,43],[-5,43],[1,51],[-5,50],[-5,56],[-5,58],[-10,56],[5,58],[12,58],[15,56],[22,60],[19,65],[23,65],[32,71],[69,68],[74,72],[103,77],[169,69],[179,66],[171,60],[140,54],[135,48],[129,40],[124,40],[118,32],[121,25],[110,20],[108,14],[101,10],[103,1],[98,7],[96,16],[80,13],[72,8],[68,24],[62,25],[58,12],[47,15],[43,12],[48,27],[35,14],[32,30],[27,31],[34,35],[26,40],[22,40],[14,48],[12,43],[9,43],[9,40],[6,44],[0,46],[-5,43],[-9,39]],
         [[-17,14],[-17,21],[-12,32],[-6,36],[5,36],[10,37],[13,38],[23,38],[32,31],[34,27],[31,10],[43,12],[51,11],[43,12],[33,-27],[19,-34],[12,-34],[5,-5],[-17,14]],
@@ -383,46 +401,99 @@
         [[167,-45],[174,-41],[171,-46],[167,-45]]
     ];
 
+    // 衛星データを一元管理する配列と選択状態（単一ステート管理）
+    let satellitesList = [];
+    let activeIndex = 0; 
+    let lastRawTle = "";
+
     window.addEventListener('DOMContentLoaded', () => {
-        const tleInput = document.getElementById('tleInput');
-        tleInput.addEventListener('input', () => { dMinVal = null; dMaxVal = null; });
+        // マウスクリック判定（Hit Test）の登録
+        document.getElementById('skyplotCanvas').addEventListener('click', (e) => handleCanvasClick(e, 'sky'));
+        document.getElementById('mapCanvas').addEventListener('click', (e) => handleCanvasClick(e, 'map'));
+        
+        // TLE入力変更時の自動リセット
+        document.getElementById('tleInput').addEventListener('input', () => { lastRawTle = ""; });
+        
         setTimeout(runCalculationAndPlot, 100);
     });
 
-    function preScanDMinDMax(satrec, observerGd) {
-        let scanMin = Infinity;
-        let scanMax = -Infinity;
-        let foundVisible = false;
+    // 🆕 【クレンジング】不完全なTLEを完全に排除し、健全な衛星オブジェクトの配列を返すロジック
+    function parseMultipleTle(rawText) {
+        const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+        const list = [];
+        let colorIdx = 0;
 
-        for (let m = -180; m <= 180; m++) {
-            const checkTime = new Date(baseTime.getTime() + m * 60 * 1000);
-            const pAndV = satellite.propagate(satrec, checkTime);
-            if (pAndV.position) {
-                const gmst = satellite.gstime(checkTime);
-                const pEcf = satellite.eciToEcf(pAndV.position, gmst);
-                const lAngles = satellite.ecfToLookAngles(observerGd, pEcf);
-                const elDeg = lAngles.elevation * (180 / Math.PI);
+        for (let i = 0; i < lines.length; i++) {
+            // "1 " から始まり、文字数が十分に足りている正規の1行目をサーチ
+            if (lines[i].startsWith('1 ') && lines[i].length >= 60) {
+                const line1 = lines[i];
+                const line2 = lines[i + 1];
 
-                if (elDeg >= 0) {
-                    foundVisible = true;
-                    const oEcf = satellite.geodeticToEcf(observerGd, gmst);
-                    const dx = pEcf.x - oEcf.x;
-                    const dy = pEcf.y - oEcf.y;
-                    const dz = pEcf.z - oEcf.z;
-                    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-                    
-                    if (dist < scanMin) scanMin = dist;
-                    if (dist > scanMax) scanMax = dist;
+                // 次の行が "2 " から始まっているペアか厳密にチェック
+                if (line2 && line2.startsWith('2 ') && line2.length >= 60) {
+                    // 前の行が衛星名（"1 "でも"2 "でもない文字列）であるかを判定
+                    let name = `Sat-${line1.substring(2, 7)}`;
+                    if (i > 0 && !lines[i-1].startsWith('1 ') && !lines[i-1].startsWith('2 ')) {
+                        name = lines[i-1];
+                    }
+
+                    list.push({
+                        name: name,
+                        line1: line1,
+                        line2: line2,
+                        color: colorPalette[colorIdx % colorPalette.length],
+                        dMin: null, // 個別のDmax/Dminを保持
+                        dMax: null,
+                        // 各自のリアルタイムな描画ピクセル座標をHit Test用に保持
+                        skyX: 0, skyY: 0, mapX: 0, mapY: 0, isCurrentlyVisible: false
+                    });
+                    colorIdx++;
+                    i++; // Line 2の処理をジャンプ
                 }
             }
         }
+        return list;
+    }
 
-        if (foundVisible) {
-            dMinVal = scanMin;
-            dMaxVal = scanMax;
-        } else {
-            dMinVal = null;
-            dMaxVal = null;
+    // 方針A：初期化時の現在時刻ベース前後3時間でその衛星のパス限界をピン留めスキャン
+    function scanSingleSatelliteRange(sat, observerGd) {
+        try {
+            const satrec = satellite.twoline2satrec(sat.line1, sat.line2);
+            let scanMin = Infinity;
+            let scanMax = -Infinity;
+            let foundVisible = false;
+
+            for (let m = -180; m <= 180; m++) {
+                const checkTime = new Date(baseTime.getTime() + m * 60 * 1000);
+                const pAndV = satellite.propagate(satrec, checkTime);
+                if (pAndV.position) {
+                    const gmst = satellite.gstime(checkTime);
+                    const pEcf = satellite.eciToEcf(pAndV.position, gmst);
+                    const lAngles = satellite.ecfToLookAngles(observerGd, pEcf);
+                    const elDeg = lAngles.elevation * (180 / Math.PI);
+
+                    if (elDeg >= 0) {
+                        foundVisible = true;
+                        const oEcf = satellite.geodeticToEcf(observerGd, gmst);
+                        const dx = pEcf.x - oEcf.x;
+                        const dy = pEcf.y - oEcf.y;
+                        const dz = pEcf.z - oEcf.z;
+                        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                        
+                        if (dist < scanMin) scanMin = dist;
+                        if (dist > scanMax) scanMax = dist;
+                    }
+                }
+            }
+            if (foundVisible) {
+                sat.dMin = scanMin;
+                sat.dMax = scanMax;
+            } else {
+                sat.dMin = null;
+                sat.dMax = null;
+            }
+        } catch(e) {
+            console.error("Scan error", e);
         }
     }
 
@@ -430,29 +501,9 @@
         const rawTle = document.getElementById('tleInput').value.trim();
         if (!rawTle) return;
 
-        if (rawTle !== lastLoadedTle) {
-            dMinVal = null; 
-            dMaxVal = null;
-            lastLoadedTle = rawTle;
-        }
-
-        const tleLines = rawTle.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
-        if (tleLines.length < 2) return;
-        
-        const line2 = tleLines[tleLines.length - 1];
-        const line1 = tleLines[tleLines.length - 2];
-
-        let satName = "Satellite";
-        if (tleLines.length >= 3) {
-            satName = tleLines[tleLines.length - 3];
-        } else {
-            if(line1.includes("25544")) satName = "ISS";
-        }
-
         const latDeg = parseFloat(document.getElementById('latInput').value);
         const lonDeg = parseFloat(document.getElementById('lonInput').value);
         const altMeters = parseFloat(document.getElementById('altInput').value);
-
         if (isNaN(latDeg) || isNaN(lonDeg)) return;
 
         const observerGd = {
@@ -461,220 +512,334 @@
             height: isNaN(altMeters) ? 0 : altMeters / 1000
         };
 
+        // TLEデータに変更があった場合の解析 ＆ 事前全機スキャン
+        if (rawTle !== lastRawTle) {
+            const parsed = parseMultipleTle(rawTle);
+            if (parsed.length === 0) return;
+            satellitesList = parsed;
+            if (activeIndex >= satellitesList.length) activeIndex = 0;
+            
+            // 全衛星の限界値を方針Aに基づき個別スキャン
+            satellitesList.forEach(sat => scanSingleSatelliteRange(sat, observerGd));
+            lastRawTle = rawTle;
+        }
+
         const offsetMinutes = parseInt(document.getElementById('timeSlider').value);
         const calcTime = new Date(baseTime.getTime() + offsetMinutes * 60 * 1000);
+        document.getElementById('calcTime').textContent = calcTime.toLocaleString();
 
-        const offsetLabel = document.getElementById('sliderOffsetVal');
-        if (offsetMinutes === 0) {
-            offsetLabel.textContent = "現在時刻";
-        } else if (offsetMinutes > 0) {
-            offsetLabel.textContent = `＋${offsetMinutes} 分後`;
-        } else {
-            offsetLabel.textContent = `－${Math.abs(offsetMinutes)} 分前`;
-        }
+        // 各キャンバスのクリア
+        const skyCanvas = document.getElementById('skyplotCanvas');
+        const mapCanvas = document.getElementById('mapCanvas');
+        if(!skyCanvas || !mapCanvas) return;
+        
+        const skyCtx = skyCanvas.getContext('2d');
+        const mapCtx = mapCanvas.getContext('2d');
+        skyCtx.clearRect(0, 0, skyCanvas.width, skyCanvas.height);
+        mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
 
-        try {
-            if (typeof satellite === 'undefined') return;
+        // 背景静的要素の描画
+        drawSkyplotBackground(skyCanvas, skyCtx);
+        drawMapBackground(mapCanvas, mapCtx, latDeg, lonDeg);
 
-            const satrec = satellite.twoline2satrec(line1, line2);
-            
-            if (dMinVal === null || dMaxVal === null) {
-                preScanDMinDMax(satrec, observerGd);
+        // 全一元化リストのプロパゲート演算ループ
+        satellitesList.forEach((sat, index) => {
+            try {
+                const satrec = satellite.twoline2satrec(sat.line1, sat.line2);
+                const pAndV = satellite.propagate(satrec, calcTime);
+                const positionEci = pAndV.position;
+                const velocityEci = pAndV.velocity;
+
+                if (positionEci && velocityEci) {
+                    const gmst = satellite.gstime(calcTime);
+                    const positionEcf = satellite.eciToEcf(positionEci, gmst);
+                    const velocityEcf = satellite.eciToEcf(velocityEci, gmst);
+                    
+                    const lookAngles = satellite.ecfToLookAngles(observerGd, positionEcf);
+                    const azDeg = lookAngles.azimuth * (180 / Math.PI);
+                    const elDeg = lookAngles.elevation * (180 / Math.PI);
+
+                    const positionGd = satellite.eciToGeodetic(positionEci, gmst);
+                    const sLat = positionGd.latitude * (180 / Math.PI);
+                    const sLon = positionGd.longitude * (180 / Math.PI);
+                    const sAlt = positionGd.height;
+
+                    const isAct = (index === activeIndex);
+                    sat.isCurrentlyVisible = (elDeg >= 0);
+
+                    // 各種物理計算
+                    const orbitalVel = Math.sqrt(velocityEci.x**2 + velocityEci.y**2 + velocityEci.z**2);
+                    const obsEcf = satellite.geodeticToEcf(observerGd, gmst);
+                    const rx = positionEcf.x - obsEcf.x;
+                    const ry = positionEcf.y - obsEcf.y;
+                    const rz = positionEcf.z - obsEcf.z;
+                    const rangeKm = Math.sqrt(rx**2 + ry**2 + rz**2);
+                    const rangeRate = ((rx * velocityEcf.x) + (ry * velocityEcf.y) + (rz * velocityEcf.z)) / rangeKm;
+                    const earthRadius = 6371.0;
+                    const groundVelKmh = (orbitalVel * (earthRadius / (earthRadius + sAlt))) * 3600;
+
+                    const cosLat = Math.cos(positionGd.latitude);
+                    const vLat = -velocityEcf.x * Math.sin(positionGd.latitude) * Math.cos(positionGd.longitude) 
+                                 - velocityEcf.y * Math.sin(positionGd.latitude) * Math.sin(positionGd.longitude) 
+                                 + velocityEcf.z * cosLat;
+                    const vLon = -velocityEcf.x * Math.sin(positionGd.longitude) 
+                                 + velocityEcf.y * Math.cos(positionGd.longitude);
+                    const groundTrackRad = Math.atan2(-vLat, vLon);
+
+                    // 1. Skyplotへの個別プロットと座標記録
+                    plotOnSkyplot(skyCanvas, skyCtx, azDeg, elDeg, sat, isAct);
+
+                    // 2. 世界地図への個別プロットと座標記録
+                    plotOnMap(mapCanvas, mapCtx, sLat, sLon, sAlt, groundTrackRad, groundVelKmh, sat, isAct);
+
+                    // 3. もしこれが選ばれているアクティブな1機なら、詳細情報パネルと高度ゲージを更新
+                    if (isAct) {
+                        updateActiveInfoDOM(sat.name, elDeg, rangeKm, rangeRate, orbitalVel, groundVelKmh, sLat, sLon, sAlt);
+                        drawAltitudeGauge(sAlt, rangeKm, rangeRate, sat);
+                    }
+                }
+            } catch(err) {
+                console.error("Propagate loop error", err);
             }
-
-            const positionAndVelocity = satellite.propagate(satrec, calcTime);
-            const positionEci = positionAndVelocity.position;
-            const velocityEci = positionAndVelocity.velocity;
-
-            if (positionEci && velocityEci) {
-                const gmst = satellite.gstime(calcTime);
-                
-                const positionEcf = satellite.eciToEcf(positionEci, gmst);
-                const velocityEcf = satellite.eciToEcf(velocityEci, gmst);
-                
-                const lookAngles = satellite.ecfToLookAngles(observerGd, positionEcf);
-                const azimuthDeg   = lookAngles.azimuth * (180 / Math.PI);
-                const elevationDeg = lookAngles.elevation * (180 / Math.PI);
-
-                const positionGd = satellite.eciToGeodetic(positionEci, gmst);
-                const satLatDeg = positionGd.latitude * (180 / Math.PI);
-                const satLonDeg = positionGd.longitude * (180 / Math.PI);
-                const satAltKm  = positionGd.height;
-
-                // 物理計算
-                const orbitalVel = Math.sqrt(velocityEci.x**2 + velocityEci.y**2 + velocityEci.z**2);
-                const obsEcf = satellite.geodeticToEcf(observerGd, gmst);
-                
-                const rx = positionEcf.x - obsEcf.x;
-                const ry = positionEcf.y - obsEcf.y;
-                const rz = positionEcf.z - obsEcf.z;
-                const rangeKm = Math.sqrt(rx**2 + ry**2 + rz**2);
-
-                const rangeRate = ((rx * velocityEcf.x) + (ry * velocityEcf.y) + (rz * velocityEcf.z)) / rangeKm;
-
-                const earthRadius = 6371.0;
-                const groundVelKmh = (orbitalVel * (earthRadius / (earthRadius + satAltKm))) * 3600;
-
-                const cosLat = Math.cos(positionGd.latitude);
-                const vLat = -velocityEcf.x * Math.sin(positionGd.latitude) * Math.cos(positionGd.longitude) 
-                             - velocityEcf.y * Math.sin(positionGd.latitude) * Math.sin(positionGd.longitude) 
-                             + velocityEcf.z * cosLat;
-                const vLon = -velocityEcf.x * Math.sin(positionGd.longitude) 
-                             + velocityEcf.y * Math.cos(positionGd.longitude);
-                const groundTrackRad = Math.atan2(-vLat, vLon);
-
-                const isVisible = elevationDeg >= 0;
-
-                // UI表示更新
-                document.getElementById('calcTime').textContent = calcTime.toLocaleString();
-                document.getElementById('txtEl').textContent = `${elevationDeg.toFixed(2)}°`;
-                document.getElementById('txtRange').textContent = rangeKm.toFixed(1);
-                
-                const rrTxt = document.getElementById('txtRangeRate');
-                let rangeRateString = "";
-                if (rangeRate < 0) {
-                    rangeRateString = `接近中 (${Math.abs(rangeRate).toFixed(2)} km/s)`;
-                    if (isVisible) rrTxt.style.color = 'var(--primary-color)';
-                } else {
-                    rangeRateString = `遠ざかり中 (${rangeRate.toFixed(2)} km/s)`;
-                    if (isVisible) rrTxt.style.color = 'var(--danger-color)';
-                }
-                rrTxt.textContent = rangeRateString;
-
-                if (isVisible) {
-                    document.getElementById('wrapEl').className = "";
-                    document.getElementById('wrapRange').className = "";
-                    document.getElementById('wrapRangeRate').className = "";
-                } else {
-                    document.getElementById('wrapEl').className = "text-muted";
-                    document.getElementById('wrapRange').className = "text-muted";
-                    document.getElementById('wrapRangeRate').className = "text-muted";
-                    rrTxt.style.color = "inherit"; 
-                }
-
-                document.getElementById('txtOrbitalVel').textContent = orbitalVel.toFixed(2);
-                document.getElementById('txtGroundVel').textContent = groundVelKmh.toFixed(0).replace(/\B(?=(\d3)+(?!\d))/g, ",");
-                document.getElementById('satLat').textContent = satLatDeg.toFixed(4);
-                document.getElementById('satLon').textContent = satLonDeg.toFixed(4);
-                document.getElementById('satAlt').textContent = satAltKm.toFixed(0);
-
-                const badge = document.getElementById('statusBadge');
-                badge.style.display = 'inline-block';
-                if (isVisible) {
-                    badge.textContent = '👉 この時刻、この場所から見えています！';
-                    badge.className = 'status-badge visible';
-                } else {
-                    badge.textContent = '❌ この時刻、地平線の下に隠れています。';
-                    badge.className = 'status-badge hidden';
-                }
-
-                drawSkyplot(azimuthDeg, elevationDeg, satName);
-                drawAltitudeGauge(satAltKm, rangeKm, rangeRate, rangeRateString, isVisible);
-                drawFootprintMap(satLatDeg, satLonDeg, satAltKm, latDeg, lonDeg, groundTrackRad, groundVelKmh, satName);
-
-            } else {
-                clearCanvas();
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    function clearCanvas() {
-        ['skyplotCanvas', 'altitudeCanvas', 'mapCanvas'].forEach(id => {
-            const canvas = document.getElementById(id);
-            if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
         });
     }
 
-    function drawSkyplot(azimuth, elevation, satName) {
-        const canvas = document.getElementById('skyplotCanvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 🆕 【要件2】ダイレクト選択を叶える Canvas Hit Test クリックハンドラー
+    function handleCanvasClick(event, type) {
+        if (satellitesList.length <= 1) return;
+        
+        const rect = event.target.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const clickY = event.clientY - rect.top;
 
+        let closestIndex = -1;
+        let minDistance = Infinity;
+
+        satellitesList.forEach((sat, idx) => {
+            const targetX = (type === 'sky') ? sat.skyX : sat.mapX;
+            const targetY = (type === 'sky') ? sat.skyY : sat.mapY;
+            
+            const dist = Math.sqrt((clickX - targetX)**2 + (clickY - targetY)**2);
+            // 判定領域として半径25ピクセル以内
+            if (dist < 25 && dist < minDistance) {
+                minDistance = dist;
+                closestIndex = idx;
+            }
+        });
+
+        // 🆕 最新選択を優先（パターン2）：全画面で同じ1機を瞬時にロックオン
+        if (closestIndex !== -1) {
+            activeIndex = closestIndex;
+            runCalculationAndPlot();
+        }
+    }
+
+    function drawSkyplotBackground(canvas, ctx) {
         const cx = canvas.width / 2;
         const cy = canvas.height / 2;
         const maxRadius = Math.min(cx, cy) - 30;
 
-        ctx.beginPath();
-        ctx.arc(cx, cy, maxRadius, 0, 2 * Math.PI);
-        ctx.fillStyle = '#f8fafc';
-        ctx.fill();
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx, cy, maxRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = '#f8fafc'; ctx.fill();
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 2; ctx.stroke();
 
-        const elCircles = [30, 60];
-        ctx.strokeStyle = '#94a3b8';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]);
-        elCircles.forEach(el => {
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+        [30, 60].forEach(el => {
             const r = maxRadius * ((90 - el) / 90);
-            ctx.beginPath();
-            ctx.arc(cx, cy, r, 0, 2 * Math.PI);
-            ctx.stroke();
-            ctx.fillStyle = '#64748b';
-            ctx.font = '11px sans-serif';
-            ctx.textAlign = 'center';
+            ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI); ctx.stroke();
+            ctx.fillStyle = '#64748b'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
             ctx.fillText(`${el}°`, cx, cy - r - 4);
         });
 
         ctx.beginPath();
         ctx.moveTo(cx, cy - maxRadius); ctx.lineTo(cx, cy + maxRadius);
         ctx.moveTo(cx - maxRadius, cy); ctx.lineTo(cx + maxRadius, cy);
-        ctx.stroke();
-        ctx.setLineDash([]);
+        ctx.stroke(); ctx.setLineDash([]);
 
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 15px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('N', cx, cy - maxRadius - 15);
-        ctx.fillText('S', cx, cy + maxRadius + 15);
-        ctx.fillText('E', cx + maxRadius + 15, cy);
-        ctx.fillText('W', cx - maxRadius - 15, cy);
-
-        const angleRad = (azimuth - 90) * (Math.PI / 180);
-
-        if (elevation >= 0) {
-            const r = maxRadius * ((90 - elevation) / 90);
-            const satX = cx + r * Math.cos(angleRad);
-            const satY = cy + r * Math.sin(angleRad);
-
-            ctx.beginPath();
-            ctx.arc(satX, satY, 8, 0, 2 * Math.PI);
-            ctx.fillStyle = '#f97316';
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            ctx.fillStyle = '#f97316';
-            ctx.font = 'bold 13px sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillText(` ${satName}`, satX + 10, satY);
-        } else {
-            const satX = cx + maxRadius * Math.cos(angleRad);
-            const satY = cy + maxRadius * Math.sin(angleRad);
-
-            ctx.beginPath();
-            ctx.arc(satX, satY, 7, 0, 2 * Math.PI);
-            ctx.fillStyle = '#e2e8f0'; 
-            ctx.fill();
-            ctx.strokeStyle = '#94a3b8';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-
-            ctx.fillStyle = '#94a3b8';
-            ctx.font = 'italic 11px sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillText(` (${satName})`, satX + 8, satY + 3);
-        }
+        ctx.fillStyle = '#1e293b'; ctx.font = 'bold 15px sans-serif'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+        ctx.fillText('N', cx, cy - maxRadius - 15); ctx.fillText('S', cx, cy + maxRadius + 15);
+        ctx.fillText('E', cx + maxRadius + 15, cy); ctx.fillText('W', cx - maxRadius - 15, cy);
     }
 
-    // 🆕 高度・擬似距離ゲージ描画ロジック（要件4の座標修正および要件5のインライン追加）
-    function drawAltitudeGauge(altKm, rangeKm, rangeRate, rangeRateString, isVisible) {
+    function plotOnSkyplot(canvas, ctx, azimuth, elevation, sat, isAct) {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const maxRadius = Math.min(cx, cy) - 30;
+        const angleRad = (azimuth - 90) * (Math.PI / 180);
+
+        const isVis = (elevation >= 0);
+        const currentEl = isVis ? elevation : 0; // 不可視時は外周境界線上にプロット
+        const r = maxRadius * ((90 - currentEl) / 90);
+
+        const x = cx + r * Math.cos(angleRad);
+        const y = cy + r * Math.sin(angleRad);
+
+        // クリック判定用に現在の2D座標をオブジェクトに記憶
+        sat.skyX = x;
+        sat.skyY = y;
+
+        ctx.save();
+        if (isVis) {
+            // 可視状態の描画
+            ctx.beginPath(); ctx.arc(x, y, isAct ? 9 : 6, 0, 2 * Math.PI);
+            ctx.fillStyle = sat.color;
+            ctx.globalAlpha = isAct ? 1.0 : 0.45; // 選択状態のコントラスト
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
+
+            // 🆕 ロックオン対象にはレーダー状の波紋（パルスリング）を描画
+            if (isAct) {
+                ctx.strokeStyle = sat.color; ctx.lineWidth = 1; ctx.globalAlpha = 0.4;
+                ctx.beginPath(); ctx.arc(x, y, 16, 0, 2 * Math.PI); ctx.stroke();
+            }
+
+            ctx.globalAlpha = isAct ? 1.0 : 0.5;
+            ctx.fillStyle = isAct ? '#1e293b' : '#64748b';
+            ctx.font = isAct ? 'bold 12px sans-serif' : '11px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(` ${sat.name}`, x + 10, y + 2);
+       } else {
+            // 🆕 【v2.8.1修正】不可視状態：外周に「直径3pxの極小ドット」でプロットし、数珠つなぎのノイズを排除
+            ctx.beginPath(); 
+            ctx.arc(x, y, isAct ? 3.5 : 1.5, 0, 2 * Math.PI); // 選択時は少しだけ強調、非選択は直径3pxの極小点に
+            ctx.fillStyle = isAct ? sat.color : '#cbd5e1'; // 非選択時は極力目立たない淡いグレー
+            ctx.fill();
+            
+            // 選択中のターゲットのみ、LOS方向を明示するために極細の枠線をつける
+            if (isAct) {
+                ctx.strokeStyle = sat.color; 
+                ctx.lineWidth = 1; 
+                ctx.stroke();
+            }
+
+            // テキスト表示も非選択時は隠蔽（ホバー判定用座標は生きているので、クリックしてロックオンは可能）
+            if (isAct) {
+                ctx.fillStyle = sat.color; ctx.globalAlpha = 1.0;
+                ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left';
+                ctx.fillText(` (${sat.name})`, x + 6, y + 3);
+            }
+        }
+        ctx.restore();
+    }
+
+    function drawMapBackground(canvas, ctx, obsLat, obsLon) {
+        ctx.fillStyle = '#e0f2fe'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const getXY = (lat, lon) => {
+            return { x: ((lon + 180) / 360) * canvas.width, y: ((90 - lat) / 180) * canvas.height };
+        };
+
+        // 陸地ポリゴン
+        ctx.fillStyle = '#cbd5e1'; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1;
+        worldContours.forEach(polygon => {
+            ctx.beginPath();
+            polygon.forEach((pt, idx) => {
+                const xy = getXY(pt[1], pt[0]);
+                if (idx === 0) ctx.moveTo(xy.x, xy.y); else ctx.lineTo(xy.x, xy.y);
+            });
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+        });
+
+        // グリッド線
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 0.5;
+        for (let l = -150; l <= 150; l += 30) {
+            ctx.beginPath(); ctx.moveTo(getXY(90, l).x, 0); ctx.lineTo(getXY(-90, l).x, canvas.height); ctx.stroke();
+        }
+        for (let l = -60; l <= 60; l += 30) {
+            ctx.beginPath(); ctx.moveTo(0, getXY(l, 0).y); ctx.lineTo(canvas.width, getXY(l, 0).y); ctx.stroke();
+        }
+
+        // 観測点
+        const obsXY = getXY(obsLat, obsLon);
+        ctx.beginPath(); ctx.arc(obsXY.x, obsXY.y, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = '#2563eb'; ctx.fill();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+
+    function plotOnMap(canvas, ctx, satLat, satLon, satAlt, groundTrackRad, groundVel, sat, isAct) {
+        const getXY = (lat, lon) => {
+            return { x: ((lon + 180) / 360) * canvas.width, y: ((90 - lat) / 180) * canvas.height };
+        };
+        const satXY = getXY(satLat, satLon);
+        
+        sat.mapX = satXY.x;
+        sat.mapY = satXY.y;
+
+        // 可視圏（フットプリント）計算
+        const R_earth = 6371.0;
+        const cosTheta = R_earth / (R_earth + satAlt);
+        const centralAngleRad = Math.acos(Math.min(1.0, Math.max(-1.0, cosTheta)));
+        const radiusEarthKm = R_earth * centralAngleRad;
+
+        const degRadiusLon = (radiusEarthKm / (2 * Math.PI * R_earth * Math.cos(Math.max(-80, Math.min(80, satLat)) * Math.PI / 180))) * 360;
+        const degRadiusLat = (radiusEarthKm / (2 * Math.PI * R_earth)) * 360;
+        const pixelRadiusX = (degRadiusLon / 360) * canvas.width;
+        const pixelRadiusY = (degRadiusLat / 180) * canvas.height;
+
+        ctx.save();
+        if (isAct) {
+            // 方針3：アクティブ衛星のみ半透明で塗りつぶし描画
+            ctx.beginPath();
+            ctx.ellipse(satXY.x, satXY.y, Math.min(canvas.width/3, pixelRadiusX), Math.min(canvas.height/3, pixelRadiusY), 0, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(249, 115, 22, 0.14)'; ctx.fill();
+            ctx.strokeStyle = sat.color; ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]); ctx.stroke();
+            document.getElementById('footprintRadius').textContent = radiusEarthKm.toFixed(0);
+        } else {
+            // 方針3：非選択の周辺衛星は薄い輪郭点線のみを描画して重なりノイズを排除
+            ctx.beginPath();
+            ctx.ellipse(satXY.x, satXY.y, Math.min(canvas.width/3, pixelRadiusX), Math.min(canvas.height/3, pixelRadiusY), 0, 0, 2 * Math.PI);
+            ctx.strokeStyle = sat.color; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.35; ctx.setLineDash([2, 4]); ctx.stroke();
+        }
+        ctx.restore();
+
+        // 対地速度ベクトル（矢印）
+        const arrowLength = (groundVel / 28000) * 80; 
+        if (arrowLength > 2 && isAct) { // ベクトル矢印も主役に限定して描画
+            const arrowX = satXY.x + arrowLength * Math.cos(groundTrackRad);
+            const arrowY = satXY.y + arrowLength * Math.sin(groundTrackRad);
+
+            ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.moveTo(satXY.x, satXY.y); ctx.lineTo(arrowX, arrowY); ctx.stroke();
+
+            const headSize = 7;
+            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(arrowX, arrowY);
+            ctx.lineTo(arrowX - headSize * Math.cos(groundTrackRad - Math.PI/6), arrowY - headSize * Math.sin(groundTrackRad - Math.PI/6));
+            ctx.lineTo(arrowX - headSize * Math.cos(groundTrackRad + Math.PI/6), arrowY - headSize * Math.sin(groundTrackRad + Math.PI/6));
+            ctx.closePath(); ctx.fill();
+        }
+
+        // 衛星直下点マーカー
+        ctx.save();
+        ctx.beginPath(); ctx.arc(satXY.x, satXY.y, isAct ? 6 : 4.5, 0, 2 * Math.PI);
+        ctx.fillStyle = sat.color;
+        ctx.globalAlpha = isAct ? 1.0 : 0.45;
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.2; ctx.stroke();
+
+        ctx.fillStyle = isAct ? '#1e293b' : '#64748b';
+        ctx.font = isAct ? 'bold 12px sans-serif' : '11px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(` ${sat.name}`, satXY.x + 8, satXY.y + 3);
+        ctx.restore();
+    }
+
+    function updateActiveInfoDOM(name, el, range, rate, orbitV, groundV, lat, lon, alt) {
+        document.getElementById('txtLockName').textContent = name;
+        document.getElementById('txtEl').textContent = `${el.toFixed(2)}°`;
+        document.getElementById('txtRange').textContent = range.toFixed(1);
+        
+        const rrTxt = document.getElementById('txtRangeRate');
+        if (rate < 0) rrTxt.textContent = `接近中 (${Math.abs(rate).toFixed(2)} km/s)`;
+        else rrTxt.textContent = `遠ざかり中 (${rate.toFixed(2)} km/s)`;
+
+        document.getElementById('txtOrbitalVel').textContent = orbitV.toFixed(2);
+        document.getElementById('txtGroundVel').textContent = groundV.toFixed(0).replace(/\B(?=(\d3)+(?!\d))/g, ",");
+        document.getElementById('satLat').textContent = lat.toFixed(4);
+        document.getElementById('satLon').textContent = lon.toFixed(4);
+        document.getElementById('satAlt').textContent = alt.toFixed(0);
+    }
+
+    // 🆕 同軸高度ゲージ描画ロジック（全機の高度ドットプロット共存 ＆ 要件5サンドイッチ完全版）
+    function drawAltitudeGauge(activeAltKm, activeRangeKm, activeRangeRate, activeSat) {
         const canvas = document.getElementById('altitudeCanvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -682,7 +847,7 @@
 
         const padTop = 40, padBot = 40;
         const hG = canvas.height - padTop - padBot;
-        const xCenter = 45; // メイン高度軸のX座標
+        const xCenter = 45; 
 
         const minAlt = 100, maxAlt = 40000;
         const logMin = Math.log10(minAlt), logMax = Math.log10(maxAlt);
@@ -691,223 +856,120 @@
             const ratio = (Math.log10(clamped) - logMin) / (logMax - logMin);
             return canvas.height - padBot - (ratio * hG);
         };
-
         const yBottom = canvas.height - padBot;
 
-        // 背景：高度軸
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = 6;
+        // 背景：高度メイン軸
+        ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 6;
         ctx.beginPath(); ctx.moveTo(xCenter, padTop); ctx.lineTo(xCenter, yBottom); ctx.stroke();
 
-        // ランドマーク
+        // ランドマークガイド線
         const landmarks = [
             { name: 'ISS (~400k)', val: 400 },
             { name: 'GPS (~20k)', val: 20200 },
             { name: '静止 (~36k)', val: 36000 }
         ];
-        ctx.lineWidth = 1;
-        ctx.setLineDash([2, 3]);
+        ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
         landmarks.forEach(lm => {
             const y = getValY(lm.val);
             ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
             ctx.beginPath(); ctx.moveTo(xCenter, y); ctx.lineTo(xCenter + 45, y); ctx.stroke();
-            ctx.fillStyle = '#94a3b8';
-            ctx.font = '8px sans-serif';
-            ctx.textAlign = 'left';
+            ctx.fillStyle = '#94a3b8'; ctx.font = '8px sans-serif'; ctx.textAlign = 'left';
             ctx.fillText(lm.name, xCenter + 6, y + 10);
         });
         ctx.setLineDash([]);
 
-        const ySat = getValY(altKm);
+        // 🆕 【共存表現】リストにあるすべての衛星の「現在の軌道高度ドット」を軸上にパチパチと先行描画
+        satellitesList.forEach((sat, idx) => {
+            if (idx === activeIndex) return; // 主役は後回し
+            try {
+                const srec = satellite.twoline2satrec(sat.line1, sat.line2);
+                const offsetMin = parseInt(document.getElementById('timeSlider').value);
+                const cTime = new Date(baseTime.getTime() + offsetMin * 60 * 1000);
+                const pV = satellite.propagate(srec, cTime);
+                if (pV.position) {
+                    const gst = satellite.gstime(cTime);
+                    const gd = satellite.eciToGeodetic(pV.position, gst);
+                    const yOther = getValY(gd.height);
+                    
+                    ctx.beginPath(); ctx.arc(xCenter, yOther, 4, 0, 2 * Math.PI);
+                    ctx.fillStyle = sat.color; ctx.globalAlpha = 0.35; ctx.fill();
+                    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.stroke();
+                    ctx.globalAlpha = 1.0;
+                }
+            } catch(e){}
+        });
 
-        // 擬似距離の線分カラー制御
+        const isVisible = activeSat.isCurrentlyVisible;
+        const ySat = getValY(activeAltKm);
+
+        // アクティブ衛星の距離線分描画
         let lineColor = '#e2e8f0';
         if (isVisible) {
             const maxExpectedRate = 7.0; 
-            const alpha = Math.min(0.95, Math.max(0.20, Math.abs(rangeRate) / maxExpectedRate));
-            lineColor = rangeRate < 0 ? `rgba(37, 99, 235, ${alpha})` : `rgba(239, 68, 68, ${alpha})`;
+            const alpha = Math.min(0.95, Math.max(0.20, Math.abs(activeRangeRate) / maxExpectedRate));
+            lineColor = activeRangeRate < 0 ? `rgba(37, 99, 235, ${alpha})` : `rgba(239, 68, 68, ${alpha})`;
             
-            ctx.strokeStyle = lineColor;
-            ctx.lineWidth = 3.5;
+            ctx.strokeStyle = lineColor; ctx.lineWidth = 3.5;
             ctx.beginPath(); ctx.moveTo(xCenter, yBottom); ctx.lineTo(xCenter, ySat); ctx.stroke();
 
-            // 可視時のみ、同軸上の左側に距離テキストを表示
-            ctx.fillStyle = lineColor;
-            ctx.font = 'bold 10px sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillText(` ◀ ${rangeKm.toFixed(0)} km`, xCenter + 6, (yBottom + ySat)/2 + 4);
+            ctx.fillStyle = lineColor; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'left';
+            ctx.fillText(` ◀ ${activeRangeKm.toFixed(0)} km`, xCenter + 6, (yBottom + ySat)/2 + 4);
         } else {
-            ctx.strokeStyle = '#cbd5e1';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([2, 4]);
-            ctx.beginPath(); ctx.moveTo(xCenter, yBottom); ctx.lineTo(xCenter, ySat); ctx.stroke();
-            ctx.setLineDash([]);
+            ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.setLineDash([2, 4]);
+            ctx.beginPath(); ctx.moveTo(xCenter, yBottom); ctx.lineTo(xCenter, ySat); ctx.stroke(); ctx.setLineDash([]);
         }
 
         // 観測点（地表）
         ctx.beginPath(); ctx.arc(xCenter, yBottom, 6, 0, 2 * Math.PI);
         ctx.fillStyle = '#2563eb'; ctx.fill();
         ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
-        
-        ctx.fillStyle = '#2563eb';
-        ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'right';
+        ctx.fillStyle = '#2563eb'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'right';
         ctx.fillText('観測点 ', xCenter - 6, yBottom + 4);
 
-        // 高度軸上の衛星アイコン
+        // 主役衛星の高度プロット
         ctx.beginPath(); ctx.arc(xCenter, ySat, 6, 0, 2 * Math.PI);
-        ctx.fillStyle = isVisible ? '#f97316' : '#94a3b8'; 
-        ctx.fill();
+        ctx.fillStyle = isVisible ? activeSat.color : '#94a3b8'; ctx.fill();
         ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
-
-        ctx.fillStyle = isVisible ? '#f97316' : '#64748b';
-        ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'right';
+        ctx.fillStyle = isVisible ? activeSat.color : '#64748b'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'right';
         ctx.fillText('衛星 ', xCenter - 6, ySat + 4);
 
-        // 🆕 【要件4】右側の空きスペースの座標修正配置
+        // 🆕 【要件4 ＆ 要件5】右側のサンドイッチUI詳細パネル描画
         const xStats = 110; 
-        ctx.fillStyle = '#475569';
-        ctx.font = 'bold 10px sans-serif';
-        ctx.textAlign = 'left';
+        ctx.fillStyle = '#475569'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'left';
         ctx.fillText('可視中のレンジ', xStats, padTop + 100);
         
-        // Dmaxの描画
-        ctx.font = '9px sans-serif';
-        ctx.fillStyle = 'var(--danger-color)';
-        const dMaxText = dMaxVal !== null ? `${dMaxVal.toFixed(0)} km` : '---';
+        // ① Dmax (出没時)
+        ctx.font = '9px sans-serif'; ctx.fillStyle = 'var(--danger-color)';
+        const dMaxText = activeSat.dMax !== null ? `${activeSat.dMax.toFixed(0)} km` : '---';
         ctx.fillText(`Dmax (出没時):`, xStats, padTop + 130);
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillText(`  ${dMaxText}`, xStats, padTop + 142);
+        ctx.font = 'bold 10px sans-serif'; ctx.fillText(`  ${dMaxText}`, xStats, padTop + 142);
 
-        // 🆕 【要件5】Dmax / Dmin の中間に「現在の状況」を動的マッピングして表示
-        ctx.font = '9px sans-serif';
-        ctx.fillStyle = isVisible ? '#334155' : '#94a3b8';
+        // ② 【要件5】現在の見通し距離(Range)
+        ctx.font = '9px sans-serif'; ctx.fillStyle = isVisible ? '#334155' : '#94a3b8';
         ctx.fillText('見通し距離(range):', xStats, padTop + 175);
-        
-        ctx.font = 'bold 11px sans-serif';
-        // 不可視の時は数値を隠す（またはハイフンにする）仕様の適用
-        ctx.fillStyle = isVisible ? lineColor : '#94a3b8';
-        const currentDistText = isVisible ? `${rangeKm.toFixed(1)} km` : '---';
+        ctx.font = 'bold 11px sans-serif'; ctx.fillStyle = isVisible ? lineColor : '#94a3b8';
+        const currentDistText = isVisible ? `${activeRangeKm.toFixed(1)} km` : '---';
         ctx.fillText(`  ${currentDistText}`, xStats, padTop + 188);
 
-        ctx.font = '9px sans-serif';
-        ctx.fillStyle = isVisible ? '#334155' : '#94a3b8';
+        // ③ 【要件5】現在の相対速度(Doppler)
+        ctx.font = '9px sans-serif'; ctx.fillStyle = isVisible ? '#334155' : '#94a3b8';
         ctx.fillText('相対速度(doppler):', xStats, padTop + 212);
-        
         ctx.font = 'bold 10px sans-serif';
-        ctx.fillStyle = isVisible ? (rangeRate < 0 ? 'var(--primary-color)' : 'var(--danger-color)') : '#94a3b8';
-        const currentRateText = isVisible ? (rangeRate < 0 ? `-${Math.abs(rangeRate).toFixed(2)} km/s` : `+${rangeRate.toFixed(2)} km/s`) : '---';
+        ctx.fillStyle = isVisible ? (activeRangeRate < 0 ? 'var(--primary-color)' : 'var(--danger-color)') : '#94a3b8';
+        const currentRateText = isVisible ? (activeRangeRate < 0 ? `-${Math.abs(activeRangeRate).toFixed(2)} km/s` : `+${activeRangeRate.toFixed(2)} km/s`) : '---';
         ctx.fillText(`  ${currentRateText}`, xStats, padTop + 224);
 
-        // Dminの描画
-        ctx.font = '9px sans-serif';
-        ctx.fillStyle = 'var(--primary-color)';
-        const dMinText = dMinVal !== null ? `${dMinVal.toFixed(0)} km` : '---';
+        // ④ Dmin (再接近時)
+        ctx.font = '9px sans-serif'; ctx.fillStyle = 'var(--primary-color)';
+        const dMinText = activeSat.dMin !== null ? `${activeSat.dMin.toFixed(0)} km` : '---';
         ctx.fillText(`Dmin (再接近時):`, xStats, padTop + 260);
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillText(`  ${dMinText}`, xStats, padTop + 272);
-    }
-
-    function drawFootprintMap(satLat, satLon, satAlt, obsLat, obsLon, groundTrackRad, groundVel, satName) {
-        const canvas = document.getElementById('mapCanvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        ctx.fillStyle = '#e0f2fe';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        const getXY = (lat, lon) => {
-            const x = ((lon + 180) / 360) * canvas.width;
-            const y = ((90 - lat) / 180) * canvas.height;
-            return { x, y };
-        };
-
-        ctx.fillStyle = '#cbd5e1';
-        ctx.strokeStyle = '#94a3b8';
-        ctx.lineWidth = 1;
-        worldContours.forEach(polygon => {
-            ctx.beginPath();
-            polygon.forEach((pt, idx) => {
-                const xy = getXY(pt[1], pt[0]);
-                if (idx === 0) ctx.moveTo(xy.x, xy.y);
-                else ctx.lineTo(xy.x, xy.y);
-            });
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-        });
-
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.lineWidth = 0.5;
-        for (let l = -150; l <= 150; l += 30) {
-            ctx.beginPath(); ctx.moveTo(getXY(90, l).x, 0); ctx.lineTo(getXY(-90, l).x, canvas.height); ctx.stroke();
-        }
-        for (let l = -60; l <= 60; l += 30) {
-            ctx.beginPath(); ctx.moveTo(0, getXY(l, 0).y); ctx.lineTo(canvas.width, getXY(l, 0).y); ctx.stroke();
-        }
-
-        const obsXY = getXY(obsLat, obsLon);
-        ctx.beginPath(); ctx.arc(obsXY.x, obsXY.y, 6, 0, 2 * Math.PI);
-        ctx.fillStyle = '#2563eb'; ctx.fill();
-        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
-
-        const R_earth = 6371.0;
-        const cosTheta = R_earth / (R_earth + satAlt);
-        const centralAngleRad = Math.acos(Math.min(1.0, Math.max(-1.0, cosTheta)));
-        const radiusEarthKm = R_earth * centralAngleRad;
-        document.getElementById('footprintRadius').textContent = radiusEarthKm.toFixed(0);
-
-        const degRadiusLon = (radiusEarthKm / (2 * Math.PI * R_earth * Math.cos(Math.max(-80, Math.min(80, satLat)) * Math.PI / 180))) * 360;
-        const degRadiusLat = (radiusEarthKm / (2 * Math.PI * R_earth)) * 360;
-        const pixelRadiusX = (degRadiusLon / 360) * canvas.width;
-        const pixelRadiusY = (degRadiusLat / 180) * canvas.height;
-
-        const satXY = getXY(satLat, satLon);
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.ellipse(satXY.x, satXY.y, Math.min(canvas.width/3, pixelRadiusX), Math.min(canvas.height/3, pixelRadiusY), 0, 0, 2 * Math.PI);
-        ctx.fillStyle = 'rgba(249, 115, 22, 0.15)'; ctx.fill();
-        ctx.strokeStyle = 'rgba(249, 115, 22, 0.6)'; ctx.lineWidth = 1.5;
-        ctx.setLineDash([3, 3]); ctx.stroke();
-        ctx.restore();
-
-        const arrowLength = (groundVel / 28000) * 80; 
-        if (arrowLength > 2) {
-            const arrowX = satXY.x + arrowLength * Math.cos(groundTrackRad);
-            const arrowY = satXY.y + arrowLength * Math.sin(groundTrackRad);
-
-            ctx.strokeStyle = '#ef4444';
-            ctx.lineWidth = 2.5;
-            ctx.beginPath();
-            ctx.moveTo(satXY.x, satXY.y);
-            ctx.lineTo(arrowX, arrowY);
-            ctx.stroke();
-
-            const headSize = 7;
-            ctx.fillStyle = '#ef4444';
-            ctx.beginPath();
-            ctx.moveTo(arrowX, arrowY);
-            ctx.lineTo(arrowX - headSize * Math.cos(groundTrackRad - Math.PI/6), arrowY - headSize * Math.sin(groundTrackRad - Math.PI/6));
-            ctx.lineTo(arrowX - headSize * Math.cos(groundTrackRad + Math.PI/6), arrowY - headSize * Math.sin(groundTrackRad + Math.PI/6));
-            ctx.closePath();
-            ctx.fill();
-        }
-
-        ctx.beginPath(); ctx.arc(satXY.x, satXY.y, 6, 0, 2 * Math.PI);
-        ctx.fillStyle = '#f97316'; ctx.fill();
-        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; stroke();
-
-        ctx.fillStyle = '#f97316';
-        ctx.font = 'bold 12px sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(` ${satName}`, satXY.x + 8, satXY.y + 4);
+        ctx.font = 'bold 10px sans-serif'; ctx.fillText(`  ${dMinText}`, xStats, padTop + 272);
     }
 
     document.getElementById('calcBtn').addEventListener('click', () => {
         baseTime = new Date();
         document.getElementById('timeSlider').value = 0;
-        dMinVal = null; dMaxVal = null; 
+        lastRawTle = ""; // スキャン再トリガー
         runCalculationAndPlot();
     });
 
@@ -921,7 +983,7 @@
             document.getElementById('latInput').value = parts[0].trim();
             document.getElementById('lonInput').value = parts[1].trim();
             document.getElementById('timeSlider').value = 0;
-            dMinVal = null; dMaxVal = null;
+            lastRawTle = ""; 
             runCalculationAndPlot();
         }
     });
